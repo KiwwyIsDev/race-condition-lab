@@ -29,7 +29,12 @@ export async function POST(request: NextRequest) {
     buyer = "anonymous";
   }
 
-  const product = getProduct.get() as Product | undefined;
+  let product: Product | undefined;
+  try {
+    product = getProduct.get() as Product | undefined;
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 
   if (!product) {
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
@@ -48,17 +53,21 @@ export async function POST(request: NextRequest) {
 
   // VULNERABILITY: no transaction wraps the check above and the update below.
   // All requests that passed the stock check will decrement, causing overselling.
-  decrementStock.run();
-  const result = insertOrder.run(buyer);
+  try {
+    decrementStock.run();
+    const result = insertOrder.run(buyer);
 
-  // FIX: replace the two lines above with a single atomic update and check the result.
-  // const info = db.prepare("UPDATE products SET stock = stock - 1 WHERE id = 1 AND stock > 0").run();
-  // if (info.changes === 0) return NextResponse.json({ success: false, message: "Out of stock" }, { status: 409 });
-  // const result = insertOrder.run(buyer);
+    // FIX: replace the two lines above with a single atomic update and check the result.
+    // const info = db.prepare("UPDATE products SET stock = stock - 1 WHERE id = 1 AND stock > 0").run();
+    // if (info.changes === 0) return NextResponse.json({ success: false, message: "Out of stock" }, { status: 409 });
+    // const result = insertOrder.run(buyer);
 
-  return NextResponse.json({
-    success: true,
-    message: `Purchase successful! Order #${result.lastInsertRowid} placed for ${buyer}.`,
-    orderId: result.lastInsertRowid,
-  });
+    return NextResponse.json({
+      success: true,
+      message: `Purchase successful! Order #${result.lastInsertRowid} placed for ${buyer}.`,
+      orderId: result.lastInsertRowid,
+    });
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

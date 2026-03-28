@@ -20,5 +20,5 @@
 
 ## 🚀 Build & Run Commands
 - `npm install` - ติดตั้ง dependencies
-- `npm run dev` - เริ่มต้น dev server (Next.js 16.2)
+- `npm run dev` - เริ่มต้น dev server
 - `python3 exploit.py` - สคริปต์สำหรับจำลองการโจมตี
